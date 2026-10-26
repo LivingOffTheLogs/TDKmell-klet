@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<style>
+  html { background: #fff; color: #171717; }
+  body { max-width: 1100px; margin: 2rem auto; padding: 0 1.2rem; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 13px; line-height: 1.5; white-space: pre; overflow-x: auto; margin: 0 0 3em; padding: 0; background: transparent; border: 0; }
+  pre:last-child { margin-bottom: 0; }
+  code { font-family: inherit; }
+</style>
+</head>
+<body>
+<pre><code>.\Sysmon64.exe -c</code></pre>
+
+
+<pre><code>Get-NetFirewallProfile | Select-Object Name,Enabled</code></pre>
+
+
+<pre><code>Get-WinEvent -ListLog &#x27;Microsoft-Windows-PowerShell/Operational&#x27; |
+    Select-Object LogName, IsEnabled, RecordCount</code></pre>
+
+
+<pre><code>Get-Service WinRM | Select-Object Name, Status, StartType</code></pre>
+
+
+<pre><code>Get-NetFirewallRule -Name &quot;WINRM-HTTP-In-TCP*&quot; |
+    Select-Object Name, Enabled, Direction, Action</code></pre>
+
+
+<pre><code>Get-NetFirewallRule -Name &quot;WINRM-HTTP-In-TCP-NoScope&quot; |
+    Get-NetFirewallAddressFilter |
+    Select-Object LocalAddress, RemoteAddress</code></pre>
+
+
+<pre><code>Get-CimInstance Win32_Service |
+    Where-Object { $_.Name -match &#x27;bd|defender|sysmon&#x27; } |
+    Select-Object Name, State, StartMode, PathName</code></pre>
+
+
+<pre><code>Get-Process | Select-Object ProcessName, Id, Path |
+    Sort-Object ProcessName | Select-Object -First 25</code></pre>
+
+
+<pre><code>hostname.exe</code></pre>
+
+
+<pre><code>Invoke-Command -ComputerName 192.168.100.10 -Credential $cred -ScriptBlock {
+    Get-Process | Select-Object -First 15 ProcessName, Id
+}</code></pre>
+
+
+<pre><code>Get-NetFirewallRule -DisplayGroup &quot;Fájl- és nyomtatómegosztás&quot; -ErrorAction SilentlyContinue |
+    Where-Object { $_.Enabled -eq &#x27;True&#x27; -and $_.Direction -eq &#x27;Inbound&#x27; } |
+    Select-Object DisplayName, Enabled, Action</code></pre>
+
+
+<pre><code>Get-Date -Format &quot;yyyy-MM-dd HH:mm:ss&quot;</code></pre>
+
+
+<pre><code>Test-Connection 192.168.100.10 -Count 4</code></pre>
+
+
+<pre><code>80,135,139,445,5985,3389 | ForEach-Object {
+    $port = $_
+    $result = Test-NetConnection -ComputerName 192.168.100.10 -Port $port -InformationLevel Quiet
+    [PSCustomObject]@{
+        Port = $port
+        Open = $result
+    }
+}</code></pre>
+
+
+<pre><code>net view \\192.168.100.10</code></pre>
+
+
+<pre><code>net use</code></pre>
+
+
+<pre><code>cmdkey /list</code></pre>
+
+
+<pre><code>Get-SmbConnection | Select-Object ServerName, ShareName, UserName, Dialect</code></pre>
+
+
+<pre><code>net use \\192.168.100.10\IPC$ &quot;&quot; /user:Guest</code></pre>
+
+
+<pre><code>Get-WinEvent -FilterHashtable @{
+    LogName=&#x27;Security&#x27;
+    Id=4625
+    StartTime=(Get-Date).AddHours(-2)
+} -ErrorAction Stop |
+Select-Object -First 10 TimeCreated, Id, Message |
+Format-List</code></pre>
+
+
+<pre><code>New-Item -ItemType Directory -Path &#x27;C:\LOTL-Test&#x27; -Force</code></pre>
+
+
+<pre><code>Set-Content &#x27;C:\LOTL-Test\teszt.txt&#x27; &#x27;LOTL labor - kizarolag tesztadat&#x27;</code></pre>
+
+
+<pre><code>$everyone = ([System.Security.Principal.SecurityIdentifier]&#x27;S-1-1-0&#x27;).Translate([System.Security.Principal.NTAccount]).Value</code></pre>
+
+
+<pre><code>New-SmbShare -Name &#x27;LOTL-Test&#x27; -Path &#x27;C:\LOTL-Test&#x27; -ReadAccess $everyone</code></pre>
+
+
+<pre><code>Get-SmbShare -Name &#x27;LOTL-Test&#x27;</code></pre>
+
+
+<pre><code>Get-SmbShareAccess -Name &#x27;LOTL-Test&#x27;</code></pre>
+
+
+<pre><code>icacls C:\LOTL-Test</code></pre>
+
+
+<pre><code>Get-ChildItem C:\LOTL-Test -File |
+    Select-Object Name, Length, LastWriteTime</code></pre>
+
+
+<pre><code>Get-ChildItem &#x27;\\192.168.100.10\LOTL-Test&#x27;</code></pre>
+
+
+<pre><code>Test-NetConnection 192.168.100.10 -Port 445</code></pre>
+
+
+<pre><code>New-NetFirewallRule `
+  -DisplayName &quot;LOTL-LAB PowerShell Test&quot; `
+  -Direction Inbound -Action Allow -Protocol TCP `
+  -LocalAddress 192.168.100.10 -LocalPort 8088 `
+  -RemoteAddress 192.168.100.20 -Profile Any</code></pre>
+
+
+<pre><code>New-NetFirewallRule `
+  -DisplayName &quot;LOTL-LAB PowerShell TCP 8089&quot; `
+  -Direction Inbound -Action Allow -Protocol TCP `
+  -LocalAddress 192.168.100.10 -LocalPort 8089 `
+  -RemoteAddress 192.168.100.20 -Profile Any</code></pre>
+
+
+<pre><code>$listener = [System.Net.HttpListener]::new()
+$listener.Prefixes.Add(&quot;http://192.168.100.10:8088/&quot;)
+$listener.Start()
+Write-Host &quot;LOTL tesztvegpont aktiv. Attacker keresere var...&quot; -ForegroundColor Green
+try {
+    $context = $listener.GetContext()
+    $hostnameResult = hostname.exe
+    $result = &quot;LOTL-LAB SUCCESS | Target: $hostnameResult&quot;
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($result)
+    $context.Response.ContentType = &quot;text/plain; charset=utf-8&quot;
+    $context.Response.ContentLength64 = $bytes.Length
+    $context.Response.OutputStream.Write($bytes, 0, $bytes.Length)
+    $context.Response.Close()
+    Write-Host &quot;Keres beerkezett. Target muvelet vegrehajtva.&quot;
+}
+finally {
+    $listener.Stop()
+    $listener.Close()
+}</code></pre>
+
+
+<pre><code>Test-NetConnection 192.168.100.10 -Port 8088</code></pre>
+
+
+<pre><code>Invoke-RestMethod -Uri &quot;http://192.168.100.10:8088/&quot; -Method Get</code></pre>
+
+
+<pre><code>Get-NetTCPConnection -LocalPort 8088 -State Listen -ErrorAction SilentlyContinue |
+    Select-Object LocalAddress, LocalPort, State, OwningProcess</code></pre>
+
+
+<pre><code>$server = [System.Net.Sockets.TcpListener]::new(
+    [System.Net.IPAddress]::Parse(&quot;192.168.100.10&quot;), 8089
+)
+try {
+    $server.Start()
+    Write-Host &quot;LOTL vegpont aktiv a 8089-es porton.&quot; -ForegroundColor Green
+    $client = $server.AcceptTcpClient()
+    try {
+        $source = $client.Client.RemoteEndPoint.Address.ToString()
+        if ($source -ne &quot;192.168.100.20&quot;) {
+            throw &quot;Nem engedelyezett forras: $source&quot;
+        }
+        $stream = $client.GetStream()
+        $hostnameResult = hostname.exe
+        $body = &quot;LOTL-LAB SUCCESS | Target: $hostnameResult&quot;
+        $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+        $header = &quot;HTTP/1.1 200 OK`r`nContent-Type: text/plain; charset=utf-8`r`nContent-Length: $($bodyBytes.Length)`r`nConnection: close`r`n`r`n&quot;
+        $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
+        $stream.Write($headerBytes, 0, $headerBytes.Length)
+        $stream.Write($bodyBytes, 0, $bodyBytes.Length)
+        $stream.Flush()
+        Write-Host &quot;Keres beerkezett innen: $source&quot; -ForegroundColor Green
+        Write-Host &quot;Target muvelet vegrehajtva.&quot;
+    }
+    finally {
+        if ($client) { $client.Close() }
+    }
+}
+catch {
+    Write-Host &quot;HIBA: $($_.Exception.Message)&quot; -ForegroundColor Red
+}
+finally {
+    $server.Stop()
+}</code></pre>
+
+
+<pre><code>Test-NetConnection 192.168.100.10 -Port 8089</code></pre>
+
+
+<pre><code>Invoke-RestMethod -Uri &quot;http://192.168.100.10:8089/&quot; -TimeoutSec 10</code></pre>
+
+
+<pre><code>$request = [System.Net.HttpWebRequest]::Create(&quot;http://192.168.100.10:8089/&quot;)
+$request.Proxy = $null
+$request.Timeout = 8000
+try {
+    $response = $request.GetResponse()
+    $reader = [System.IO.StreamReader]::new($response.GetResponseStream())
+    $reader.ReadToEnd()
+    $reader.Close()
+    $response.Close()
+}
+catch {
+    Write-Host &quot;HIBA: $($_.Exception.Message)&quot; -ForegroundColor Red
+}</code></pre>
+
+
+<pre><code>Get-NetTCPConnection -LocalPort 8089 -State Listen -ErrorAction SilentlyContinue |
+    Select-Object LocalAddress, LocalPort, State</code></pre>
+
+
+<pre><code>Get-WinEvent -FilterHashtable @{
+    LogName=&#x27;Microsoft-Windows-Sysmon/Operational&#x27;
+    Id=1
+    StartTime=(Get-Date &#x27;2026-10-24 23:00:00&#x27;)
+} -ErrorAction SilentlyContinue |
+Where-Object { $_.Message -match &#x27;hostname\.exe&#x27; } |
+Select-Object TimeCreated, Id, Message | Format-List</code></pre>
+
+
+<pre><code>Get-WinEvent -FilterHashtable @{
+    LogName=&#x27;Microsoft-Windows-PowerShell/Operational&#x27;
+    Id=4104
+    StartTime=(Get-Date &#x27;2026-10-24 23:00:00&#x27;)
+} -ErrorAction SilentlyContinue |
+Where-Object { $_.Message -match &#x27;TcpListener|AcceptTcpClient|hostname&#x27; } |
+Select-Object TimeCreated, Id, Message | Format-List</code></pre>
+
+
+<pre><code>Get-NetFirewallRule -DisplayName &quot;LOTL-LAB PowerShell Test&quot;, &quot;LOTL-LAB PowerShell TCP 8089&quot; |
+    Disable-NetFirewallRule</code></pre>
+
+
+<pre><code>Get-NetFirewallRule -DisplayName &quot;LOTL-LAB PowerShell Test&quot;, &quot;LOTL-LAB PowerShell TCP 8089&quot; |
+    Select-Object DisplayName, Enabled</code></pre>
+
+
+<pre><code>New-Item -ItemType Directory -Path &quot;C:\LOTL-Certutil&quot; -Force</code></pre>
+
+
+<pre><code>&quot;LOTL CERTUTIL LAB - TEST DATA - 2026-10-25&quot; |
+    Set-Content &quot;C:\LOTL-Certutil\teszt.txt&quot; -Encoding ASCII</code></pre>
+
+
+<pre><code>Get-Content &quot;C:\LOTL-Certutil\teszt.txt&quot;</code></pre>
+
+
+<pre><code>Get-FileHash &quot;C:\LOTL-Certutil\teszt.txt&quot; -Algorithm SHA256</code></pre>
+
+
+<pre><code>certutil.exe -encode &quot;C:\LOTL-Certutil\teszt.txt&quot; &quot;C:\LOTL-Certutil\teszt.b64&quot;</code></pre>
+
+
+<pre><code>Get-Content &quot;C:\LOTL-Certutil\teszt.b64&quot;</code></pre>
+
+
+<pre><code>Get-NetTCPConnection -LocalPort 8090 -State Listen -ErrorAction SilentlyContinue |
+    Select-Object LocalAddress, LocalPort, State</code></pre>
+
+
+<pre><code>New-NetFirewallRule `
+  -DisplayName &quot;LOTL-Certutil HTTP 8090&quot; `
+  -Direction Inbound -Action Allow -Protocol TCP `
+  -LocalPort 8090 -LocalAddress 192.168.100.20 `
+  -RemoteAddress 192.168.100.10 -Profile Any</code></pre>
+
+
+<pre><code>$server = [System.Net.Sockets.TcpListener]::new(
+    [System.Net.IPAddress]::Parse(&quot;192.168.100.20&quot;), 8090
+)
+try {
+    $server.Start()
+    Write-Host &quot;CERTUTIL LAB: fajlkiszolgalo aktiv, keresre var...&quot; -ForegroundColor Green
+    $client = $server.AcceptTcpClient()
+    $stream = $client.GetStream()
+    $stream.ReadTimeout = 5000
+    $reader = [System.IO.StreamReader]::new($stream)
+    $request = $reader.ReadLine()
+    Write-Host &quot;Beerkezett keres: $request&quot;
+    if ($request -ne &quot;GET /teszt.b64 HTTP/1.1&quot;) {
+        throw &quot;Nem engedelyezett keres.&quot;
+    }
+    $file = [System.IO.File]::ReadAllBytes(&quot;C:\LOTL-Certutil\teszt.b64&quot;)
+    $header = &quot;HTTP/1.1 200 OK`r`nContent-Type: application/octet-stream`r`nContent-Length: $($file.Length)`r`nConnection: close`r`n`r`n&quot;
+    $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
+    $stream.Write($headerBytes, 0, $headerBytes.Length)
+    $stream.Write($file, 0, $file.Length)
+    $stream.Flush()
+    Write-Host &quot;Tesztallomany sikeresen elkuldve!&quot; -ForegroundColor Green
+}
+catch {
+    Write-Host &quot;HIBA: $($_.Exception.Message)&quot; -ForegroundColor Red
+}
+finally {
+    if ($client) { $client.Close() }
+    $server.Stop()
+}</code></pre>
+
+
+<pre><code>New-Item -ItemType Directory -Path &quot;C:\LOTL-Certutil&quot; -Force</code></pre>
+
+
+<pre><code>certutil.exe -urlcache -split -f &quot;http://192.168.100.20:8090/teszt.b64&quot; &quot;C:\LOTL-Certutil\letoltott.b64&quot;</code></pre>
+
+
+<pre><code>Get-Item &quot;C:\LOTL-Certutil\letoltott.b64&quot; -ErrorAction SilentlyContinue |
+    Select-Object Name, Length, LastWriteTime</code></pre>
+
+
+<pre><code>py --version</code></pre>
+
+
+<pre><code>Get-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole |
+    Select-Object FeatureName, State</code></pre>
+
+
+<pre><code>$server = [Net.Sockets.TcpListener]::new(
+    [Net.IPAddress]::Parse(&quot;192.168.100.20&quot;), 8090
+)
+$file = &quot;C:\LOTL-Certutil\teszt.b64&quot;
+try {
+    $server.Start()
+    Write-Host &quot;CERTUTIL LAB: HTTP szerver aktiv a 8090-es porton.&quot; -ForegroundColor Green
+    while ($true) {
+        $client = $server.AcceptTcpClient()
+        try {
+            $client.ReceiveTimeout = 5000
+            $client.SendTimeout = 5000
+            $stream = $client.GetStream()
+            $reader = [IO.StreamReader]::new($stream)
+            $request = $reader.ReadLine()
+            while ($reader.ReadLine() -ne &quot;&quot;) {}
+            $source = ([Net.IPEndPoint]$client.Client.RemoteEndPoint).Address.ToString()
+            Write-Host &quot;Keres: $source | $request&quot;
+            if ($source -eq &quot;192.168.100.10&quot; -and
+                $request -match &#x27;^GET /teszt\.b64 HTTP/&#x27;) {
+                $body = [IO.File]::ReadAllBytes($file)
+                $status = &quot;200 OK&quot;
+            }
+            else {
+                $body = [Text.Encoding]::UTF8.GetBytes(&quot;Not Found&quot;)
+                $status = &quot;404 Not Found&quot;
+            }
+            $header = &quot;HTTP/1.1 $status`r`nContent-Length: $($body.Length)`r`nConnection: close`r`n`r`n&quot;
+            $headerBytes = [Text.Encoding]::ASCII.GetBytes($header)
+            $stream.Write($headerBytes, 0, $headerBytes.Length)
+            $stream.Write($body, 0, $body.Length)
+            $stream.Flush()
+            Write-Host &quot;Valasz: $status&quot;
+        }
+        catch {
+            Write-Host &quot;Kereshiba: $($_.Exception.Message)&quot;
+        }
+        finally {
+            $client.Close()
+        }
+    }
+}
+finally {
+    $server.Stop()
+}</code></pre>
+
+
+<pre><code>Get-WinEvent -FilterHashtable @{
+    LogName = &#x27;Microsoft-Windows-Sysmon/Operational&#x27;
+    Id = 1
+    StartTime = [datetime]&#x27;2026-10-25 01:45:00&#x27;
+    EndTime = [datetime]&#x27;2026-10-25 02:05:00&#x27;
+} -ErrorAction SilentlyContinue |
+Where-Object { $_.Message -match &#x27;certutil.exe&#x27; } |
+Select-Object TimeCreated, Id, Message |
+Format-List</code></pre>
+
+
+<pre><code>Get-WinEvent -FilterHashtable @{
+  LogName = &#x27;Microsoft-Windows-Sysmon/Operational&#x27;
+  StartTime = [datetime]&#x27;2026-10-25 01:00:00&#x27;
+  EndTime = [datetime]&#x27;2026-10-25 03:00:00&#x27;
+} -ErrorAction SilentlyContinue |
+Where-Object { $_.Message -match &#x27;certutil\.exe|cmd\.exe&#x27; } |
+Select-Object TimeCreated, Id,
+  @{Name=&#x27;Reszlet&#x27;;Expression={
+    $_.Message.Substring(0,[Math]::Min(350,$_.Message.Length))
+  }} | Format-List</code></pre>
+
+
+<pre><code>certutil.exe -hashfile &quot;C:\Windows\System32\notepad.exe&quot; SHA256</code></pre>
+
+
+<pre><code>certutil.exe -decode &quot;C:\LOTL-Certutil\teszt.b64&quot; &quot;C:\LOTL-Certutil\dekodolt.txt&quot;</code></pre>
+
+
+<pre><code>certutil.exe -hashfile &quot;C:\LOTL-Certutil\dekodolt.txt&quot; SHA256</code></pre>
+
+
+<pre><code>Get-WinEvent -FilterHashtable @{
+    LogName = &#x27;Microsoft-Windows-Sysmon/Operational&#x27;
+    Id = 1, 5, 11
+    StartTime = [datetime]&#x27;2026-10-25 01:00:00&#x27;
+} -ErrorAction SilentlyContinue |
+Where-Object {
+    $_.Message -match &#x27;certutil\.exe|dekodolt\.txt&#x27;
+} |
+Select-Object TimeCreated, Id,
+    @{Name=&#x27;Reszlet&#x27;;Expression={
+        ($_.Message -split &quot;`n&quot; |
+         Where-Object { $_ -match &#x27;Image:|CommandLine:|TargetFilename:&#x27; }) -join &#x27; | &#x27;
+    }} | Format-List</code></pre>
+
+
+<pre><code>Get-WinEvent -FilterHashtable @{
+    LogName = &#x27;Microsoft-Windows-Sysmon/Operational&#x27;
+    Id = 1, 5
+} -ErrorAction SilentlyContinue |
+Where-Object {
+    $_.Message.Contains(&#x27;98963e64-4877-6add-0e02-000000001300&#x27;)
+} | Select-Object TimeCreated, Id, Message | Format-List</code></pre>
+
+
+<pre><code>New-Item -ItemType Directory -Path &quot;C:\LOTL-Wscript&quot; -Force</code></pre>
+
+
+<pre><code>@&#x27;
+Set fso = CreateObject(&quot;Scripting.FileSystemObject&quot;)
+Set f = fso.CreateTextFile(&quot;C:\LOTL-Wscript\eredmeny.txt&quot;, True)
+f.WriteLine &quot;LOTL WSCRIPT LAB - SUCCESS&quot;
+f.Close
+&#x27;@ | Set-Content &quot;C:\LOTL-Wscript\teszt.vbs&quot; -Encoding ASCII</code></pre>
+
+
+<pre><code>wscript.exe &quot;C:\LOTL-Wscript\teszt.vbs&quot;</code></pre>
+
+
+<pre><code>Get-Content &quot;C:\LOTL-Wscript\eredmeny.txt&quot;</code></pre>
+
+
+<pre><code>Get-WinEvent -LogName &#x27;Microsoft-Windows-Sysmon/Operational&#x27; -MaxEvents 3000 |
+Where-Object {
+    $_.Id -in 1,5,11 -and
+    $_.Message -match &#x27;wscript\.exe|teszt\.vbs|eredmeny\.txt&#x27;
+} |
+Select-Object TimeCreated, Id,
+    @{Name=&#x27;Reszlet&#x27;;Expression={
+        ($_.Message -split &quot;`n&quot; |
+        Where-Object {
+            $_ -match &#x27;Image:|CommandLine:|ParentImage:|TargetFilename:&#x27;
+        }) -join &#x27; | &#x27;
+    }} |
+Format-List</code></pre>
+
+
+<pre><code>New-Item -ItemType Directory -Path &quot;C:\LOTL-Wscript&quot; -Force</code></pre>
+
+
+<pre><code>@&#x27;
+Set fso = CreateObject(&quot;Scripting.FileSystemObject&quot;)
+Set f = fso.CreateTextFile(&quot;C:\LOTL-Wscript\attacker_eredmeny.txt&quot;, True)
+f.WriteLine &quot;LOTL WSCRIPT - ATTACKER TEST&quot;
+f.Close
+&#x27;@ | Set-Content &quot;C:\LOTL-Wscript\attacker_teszt.vbs&quot; -Encoding ASCII</code></pre>
+
+
+<pre><code>Get-FileHash &quot;C:\LOTL-Wscript\attacker_teszt.vbs&quot; -Algorithm SHA256</code></pre>
+</body>
+</html>
